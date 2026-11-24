@@ -332,7 +332,7 @@
 </div>
 
 <script>
-  const API = 'http://localhost:5001';
+  const API = 'https://student-performances-predictor.onrender.com';
   const toggleState = { Tutoring:1, Extracurricular:0, Sports:0, Music:0, Volunteering:0 };
   const supportLabels = ['None','Low','Moderate','High','Very high'];
   const gradeColors = { A:'grade-A', B:'grade-B', C:'grade-C', D:'grade-D', F:'grade-F' };
@@ -347,7 +347,7 @@
       document.getElementById('apiStatusText').style.color = '#15803d';
     } catch {
       document.getElementById('apiDot').classList.add('offline');
-      document.getElementById('apiStatusText').textContent = 'API offline — python app.py chalao';
+      document.getElementById('apiStatusText').textContent = 'API offline — Render API check karein';
       document.getElementById('apiStatusText').style.color = '#b91c1c';
     }
   }

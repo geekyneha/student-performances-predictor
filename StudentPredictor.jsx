@@ -195,7 +195,7 @@ export default function App() {
     } catch (err) {
       setError(
         err.message.includes("fetch")
-          ? "API se connect nahi ho pa raha. Flask server chalu hai? (python app.py)"
+          ? "API se connect nahi ho pa raha. Render API check karein."
           : err.message,
       );
     } finally {
@@ -262,7 +262,7 @@ export default function App() {
               borderRadius: 4,
             }}
           >
-            localhost:5000
+            student-performances-predictor.onrender.com
           </code>
         </p>
       </div>

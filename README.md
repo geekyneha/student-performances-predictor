@@ -31,7 +31,7 @@ python app.py
 ```
 
 Server will start at:
-👉 http://localhost:5000
+👉 http://localhost:5001
 
 ---
 
@@ -40,9 +40,9 @@ Server will start at:
 You can test using Browser or Postman:
 
 ```
-GET  http://localhost:5000/
-GET  http://localhost:5000/model-info
-POST http://localhost:5000/predict
+GET  http://localhost:5001/
+GET  http://localhost:5001/model-info
+POST http://localhost:5001/predict
 ```
 
 ---
@@ -124,21 +124,18 @@ npm start
 
 ---
 
-## ☁️ Deployment (Render - Free)
+## ☁️ Deploy the frontend to Vercel
 
-1. Push project to GitHub
-2. Go to Render.com → New Web Service
-3. Start command:
+The Flask API stays on Render. Vercel serves only the static frontend from
+`public/`; it does not build or deploy the Python backend.
 
-   ```bash
-   python app.py
-   ```
+1. Push this repository to GitHub and import it in Vercel.
+2. Select **Other** as the Framework Preset and leave the Build Command empty.
+3. Set the Output Directory to `public` and leave the Root Directory as `.`.
+4. Deploy. The page in `public/index.html` calls the existing Render API at
+   `https://student-performances-predictor.onrender.com`.
 
-4. Update API URL in frontend:
-
-   ```javascript
-   const API_URL = "https://your-app.onrender.com";
-   ```
+The Render service, its settings, and its API code do not need to change.
 
 ---
 
