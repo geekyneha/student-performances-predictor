@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Performance Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      color: #1a1a1a;
+    }
+
+    .container { max-width: 780px; margin: 0 auto; }
+
+    .header { margin-bottom: 2rem; }
+    .header h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .header p  { font-size: 14px; color: #666; }
+    .badge { display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 11px; padding: 2px 8px; border-radius: 5px; margin-left: 8px; font-weight: 500; vertical-align: middle; }
+    .api-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+    .dot.online  { background: #22c55e; }
+    .dot.offline { background: #ef4444; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e5e5;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 11px; font-weight: 600; color: #888;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin: 0 0 1rem;
+    }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; color: #666; font-weight: 500; }
+
+    input[type=number], select {
+      height: 38px; width: 100%;
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      background: #fafafa; color: #1a1a1a;
+      font-size: 14px; padding: 0 10px; outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type=number]:focus, select:focus { border-color: #6366f1; background: #fff; }
+
+    .slider-wrap { display: flex; align-items: center; gap: 10px; }
+    input[type=range] { flex: 1; accent-color: #6366f1; }
+    .slider-val { font-size: 13px; font-weight: 600; min-width: 42px; text-align: right; color: #1a1a1a; }
+
+    .toggle-group { display: flex; gap: 6px; }
+    .toggle-btn {
+      padding: 7px 18px; border-radius: 7px;
+      border: 1px solid #e0e0e0; background: #fafafa;
+      color: #666; font-size: 13px; cursor: pointer;
+      transition: all 0.12s; font-weight: 500;
+    }
+    .toggle-btn.active {
+      background: #ede9fe; color: #5b21b6;
+      border-color: #c4b5fd;
+    }
+
+    .predict-btn {
+      width: 100%; height: 46px; margin-top: 1rem;
+      background: #1a1a1a; color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+    .predict-btn:hover    { background: #333; }
+    .predict-btn:active   { transform: scale(0.99); }
+    .predict-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* Result */
+    .result-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e5e5; padding: 1.5rem;
+      margin-top: 1.25rem; display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 1.25rem; }
+    .gpa-num   { font-size: 52px; font-weight: 700; line-height: 1; color: #1a1a1a; }
+    .gpa-sub   { font-size: 12px; color: #888; margin-top: 4px; }
+    .grade-pill { padding: 10px 22px; border-radius: 50px; font-size: 26px; font-weight: 700; text-align: center; }
+    .grade-lbl  { font-size: 11px; color: #888; text-align: center; margin-top: 4px; }
+    .grade-A { background: #dcfce7; color: #15803d; }
+    .grade-B { background: #dbeafe; color: #1d4ed8; }
+    .grade-C { background: #fef9c3; color: #a16207; }
+    .grade-D { background: #ffedd5; color: #c2410c; }
+    .grade-F { background: #fee2e2; color: #b91c1c; }
+
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 1.25rem 0; }
+
+    .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .metric  { background: #f8f8f8; border-radius: 8px; padding: 12px; text-align: center; }
+    .metric .v { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+    .metric .l { font-size: 11px; color: #888; margin-top: 2px; }
+
+    .bars-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .bar-name  { font-size: 12px; color: #666; width: 120px; flex-shrink: 0; text-align: right; }
+    .bar-bg    { flex: 1; height: 7px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .bar-pos   { background: #22c55e; }
+    .bar-neg   { background: #ef4444; }
+    .bar-num   { font-size: 11px; font-weight: 600; min-width: 36px; }
+    .num-pos   { color: #15803d; }
+    .num-neg   { color: #b91c1c; }
+
+    .tags { display: flex; gap: 7px; flex-wrap: wrap; }
+    .tag  { font-size: 11px; color: #888; background: #f5f5f5; padding: 3px 9px; border-radius: 5px; }
+
+    .error-box {
+      margin-top: 12px; padding: 12px 16px;
+      background: #fee2e2; border: 1px solid #fca5a5;
+      border-radius: 8px; font-size: 13px; color: #b91c1c;
+    }
+
+    @media (max-width: 520px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Student performance predictor <span class="badge">ML Model</span></h1>
+    <p>KNN Regressor + Gaussian Naive Bayes — GPA &amp; Grade prediction</p>
+    <div class="api-status">
+      <span class="dot" id="apiDot"></span>
+      <span id="apiStatusText" style="color:#888">API check ho raha hai...</span>
+    </div>
+  </div>
+
+  <!-- Demographics -->
+  <div class="card">
+    <div class="section-title">Demographics</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="Age" min="14" max="20" value="17"/>
+      </div>
+      <div class="field">
+        <label>Gender</label>
+        <select id="Gender">
+          <option value="0">Female</option>
+          <option value="1" selected>Male</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ethnicity</label>
+        <select id="Ethnicity">
+          <option value="0" selected>Group 0</option>
+          <option value="1">Group 1</option>
+          <option value="2">Group 2</option>
+          <option value="3">Group 3</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family -->
+  <div class="card">
+    <div class="section-title">Family background</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Parental education</label>
+        <select id="ParentalEducation">
+          <option value="0">None</option>
+          <option value="1">High school</option>
+          <option value="2" selected>Some college</option>
+          <option value="3">Bachelor's</option>
+          <option value="4">Higher</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Parental support</label>
+        <select id="ParentalSupport">
+          <option value="0">None</option>
+          <option value="1">Low</option>
+          <option value="2" selected>Moderate</option>
+          <option value="3">High</option>
+          <option value="4">Very high</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic -->
+  <div class="card">
+    <div class="section-title">Academic habits</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Study time (hrs/week)</label>
+        <div class="slider-wrap">
+          <input type="range" id="StudyTimeWeekly" min="0" max="40" step="0.5" value="10"
+            oninput="document.getElementById('stVal').textContent=parseFloat(this.value).toFixed(1)">
+          <span class="slider-val" id="stVal">10.0</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Absences (days/year)</label>
+        <div class="slider-wrap">
+          <input type="range" id="Absences" min="0" max="30" step="1" value="5"
+            oninput="document.getElementById('absVal').textContent=this.value">
+          <span class="slider-val" id="absVal">5</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field">
+        <label>Current GPA (0–4)</label>
+        <div class="slider-wrap">
+          <input type="range" id="GPA" min="0" max="4" step="0.1" value="2.5"
+            oninput="document.getElementById('gpaInVal').textContent=parseFloat(this.value).toFixed(1)">
+          <span class="slider-val" id="gpaInVal">2.5</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Current grade class</label>
+        <select id="GradeClass">
+          <option value="0">0 — A (Excellent)</option>
+          <option value="1">1 — B (Above avg)</option>
+          <option value="2" selected>2 — C (Average)</option>
+          <option value="3">3 — D (Below avg)</option>
+          <option value="4">4 — F (Failing)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="field">
+        <label>Tutoring</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="tut0" onclick="tog('Tutoring',0)">No</button>
+          <button class="toggle-btn active" id="tut1" onclick="tog('Tutoring',1)">Yes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extracurricular -->
+  <div class="card">
+    <div class="section-title">Extracurricular activities</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Extracurricular</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="ec0" onclick="tog('Extracurricular',0)">No</button>
+          <button class="toggle-btn" id="ec1" onclick="tog('Extracurricular',1)">Yes</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sports</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="sp0" onclick="tog('Sports',0)">No</button>
+          <button class="toggle-btn" id="sp1" onclick="tog('Sports',1)">Yes</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="field">
+        <label>Music</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="mu0" onclick="tog('Music',0)">No</button>
+          <button class="toggle-btn" id="mu1" onclick="tog('Music',1)">Yes</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Volunteering</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="vo0" onclick="tog('Volunteering',0)">No</button>
+          <button class="toggle-btn" id="vo1" onclick="tog('Volunteering',1)">Yes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="predict-btn" id="predictBtn" onclick="predict()">Predict performance →</button>
+
+  <div id="errorBox" class="error-box" style="display:none"></div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="result-top">
+      <div>
+        <div class="gpa-num" id="outGPA">—</div>
+        <div class="gpa-sub">Predicted GPA · KNN Regressor</div>
+      </div>
+      <div>
+        <div class="grade-pill" id="outGradePill">—</div>
+        <div class="grade-lbl" id="outGradeLabel">GaussianNB</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="metrics">
+      <div class="metric"><div class="v" id="m1">—</div><div class="l">Study hrs/wk</div></div>
+      <div class="metric"><div class="v" id="m2">—</div><div class="l">Absences</div></div>
+      <div class="metric"><div class="v" id="m3">—</div><div class="l">Support level</div></div>
+    </div>
+
+    <hr class="divider">
+    <div class="bars-title">Key factor contributions</div>
+    <div id="factorBars"></div>
+
+    <hr class="divider">
+    <div class="tags">
+      <span class="tag">KNN (k=10)</span>
+      <span class="tag">GaussianNB</span>
+      <span class="tag">StandardScaler</span>
+      <span class="tag">Live prediction</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:5001';
+  const toggleState = { Tutoring:1, Extracurricular:0, Sports:0, Music:0, Volunteering:0 };
+  const supportLabels = ['None','Low','Moderate','High','Very high'];
+  const gradeColors = { A:'grade-A', B:'grade-B', C:'grade-C', D:'grade-D', F:'grade-F' };
+
+  // Check API status on load
+  async function checkAPI() {
+    try {
+      const res = await fetch(`${API}/`);
+      const d = await res.json();
+      document.getElementById('apiDot').classList.add('online');
+      document.getElementById('apiStatusText').textContent = 'API connected — ' + d.message;
+      document.getElementById('apiStatusText').style.color = '#15803d';
+    } catch {
+      document.getElementById('apiDot').classList.add('offline');
+      document.getElementById('apiStatusText').textContent = 'API offline — python app.py chalao';
+      document.getElementById('apiStatusText').style.color = '#b91c1c';
+    }
+  }
+  checkAPI();
+
+  function tog(field, val) {
+    toggleState[field] = val;
+    const pre = { Tutoring:'tut', Extracurricular:'ec', Sports:'sp', Music:'mu', Volunteering:'vo' }[field];
+    document.getElementById(pre+'0').className = 'toggle-btn' + (val===0?' active':'');
+    document.getElementById(pre+'1').className = 'toggle-btn' + (val===1?' active':'');
+  }
+
+  function getVal(id, isFloat=false) {
+    const el = document.getElementById(id);
+    return isFloat ? parseFloat(el.value) : parseInt(el.value);
+  }
+
+  async function predict() {
+    const btn = document.getElementById('predictBtn');
+    btn.disabled = true;
+    btn.textContent = 'Predicting...';
+    document.getElementById('errorBox').style.display = 'none';
+
+    const payload = {
+      Age:              getVal('Age'),
+      Gender:           getVal('Gender'),
+      Ethnicity:        getVal('Ethnicity'),
+      ParentalEducation:getVal('ParentalEducation'),
+      StudyTimeWeekly:  getVal('StudyTimeWeekly', true),
+      Absences:         getVal('Absences'),
+      Tutoring:         toggleState.Tutoring,
+      ParentalSupport:  getVal('ParentalSupport'),
+      Extracurricular:  toggleState.Extracurricular,
+      Sports:           toggleState.Sports,
+      Music:            toggleState.Music,
+      Volunteering:     toggleState.Volunteering,
+      GPA:              getVal('GPA', true),
+      GradeClass:       getVal('GradeClass'),
+    };
+
+    try {
+      const res = await fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      showResult(data, payload);
+    } catch(err) {
+      const msg = err.message.includes('fetch')
+        ? '⚠ API se connect nahi hua. Kya Flask server chal raha hai? Terminal mein: python app.py'
+        : '⚠ ' + err.message;
+      document.getElementById('errorBox').textContent = msg;
+      document.getElementById('errorBox').style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Predict performance →';
+    }
+  }
+
+  function showResult(data, inp) {
+    document.getElementById('outGPA').textContent = data.gpa.toFixed(2);
+
+    const pill = document.getElementById('outGradePill');
+    pill.textContent = data.grade;
+    pill.className = 'grade-pill ' + (gradeColors[data.grade] || '');
+    document.getElementById('outGradeLabel').textContent = data.gradeLabel + ' · GaussianNB';
+
+    document.getElementById('m1').textContent = inp.StudyTimeWeekly.toFixed(1);
+    document.getElementById('m2').textContent = inp.Absences;
+    document.getElementById('m3').textContent = supportLabels[inp.ParentalSupport];
+
+    const factors = [
+      { name:'Study time',       pct:(inp.StudyTimeWeekly/40)*100, impact:+(inp.StudyTimeWeekly/40*1.8).toFixed(2), pos:true  },
+      { name:'Absences',         pct:(inp.Absences/30)*100,        impact:-(inp.Absences/30*1.6).toFixed(2),        pos:false },
+      { name:'Parental support', pct:(inp.ParentalSupport/4)*100,  impact:+(inp.ParentalSupport/4*0.5).toFixed(2),  pos:true  },
+      { name:'Parental edu',     pct:(inp.ParentalEducation/4)*100,impact:+(inp.ParentalEducation/4*0.35).toFixed(2),pos:true },
+      { name:'Tutoring',         pct:inp.Tutoring*100,             impact:+(inp.Tutoring*0.25).toFixed(2),          pos:true  },
+    ];
+
+    document.getElementById('factorBars').innerHTML = factors.map(f => `
+      <div class="bar-row">
+        <span class="bar-name">${f.name}</span>
+        <div class="bar-bg"><div class="bar-fill ${f.pos?'bar-pos':'bar-neg'}" style="width:${Math.round(f.pct)}%"></div></div>
+        <span class="bar-num ${f.pos?'num-pos':'num-neg'}">${f.pos?'+':''}${f.impact}</span>
+      </div>`).join('');
+
+    const card = document.getElementById('resultCard');
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+</script>
+</body>
+</html>
