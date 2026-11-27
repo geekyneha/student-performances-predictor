@@ -1,96 +1,151 @@
-# 🎓 Student Performance Predictor
+# GradeSense
 
-A full-stack machine learning project that predicts student performance (GPA and grade) using a Flask backend and React frontend.
+## Intelligent Academic Grade Prediction Using Machine Learning
 
----
+GradeSense is an academic machine-learning project that demonstrates how
+student, family, and study-habit data can be used to estimate GPA and grade
+category. Enter a student profile in the dashboard to request a prediction from
+the Flask API.
 
-## 📂 Project Structure
+### Project author
 
-- `app.py` → Flask API (Backend)
-- `StudentPredictor.jsx` → React Component (Frontend)
-- `requirements.txt` → Python Dependencies
-- `Student_performance_data.csv` → Dataset
-- `knn_model.joblib` → Trained ML Model
-- `scaler.joblib` → Data Scaler
+- **Name:** Neha Khan
+- **University:** Amity University Noida
 
----
+> **Academic demonstration only:** predictions are estimates for learning and
+> discussion. They are not a substitute for educator judgment and must not be
+> used for admissions, disciplinary, funding, or other high-stakes decisions.
 
-## ⚙️ Setup Guide
+## Project overview
 
-### 🔹 Step 1 — Run Backend (Flask API)
+The application has a responsive browser dashboard and a Flask REST API. When
+the API starts, it loads `Student_performance_data.csv`, creates training and
+test splits, scales features, and trains two scikit-learn models:
+
+- **K-nearest neighbors regressor (KNN)** estimates GPA.
+- **Gaussian Naive Bayes (GaussianNB)** predicts grade class; the API maps the
+  predicted class to a letter grade and description.
+- **StandardScaler** scales the input features. Each model uses a scaler fit on
+  its training split.
+
+The split is 70% training and 30% testing, using random seed `42`. On startup,
+the API prints GaussianNB accuracy on the held-out test split. This is a basic
+project metric, not an independent or comprehensive model evaluation.
+
+The dashboard inputs include age, gender, ethnicity, parental education and
+support, weekly study time, absences, tutoring, extracurricular activities,
+current GPA, and current grade class.
+
+## Run locally
+
+### Requirements
+
+- Python 3 installed
+- Git installed (if cloning the repository)
+- A terminal and a modern web browser
+- Internet access for the first-time Python package installation
+
+### Step 1: Get the project files
+
+If you have not already downloaded the project, clone it and enter its folder:
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+git clone https://github.com/geekyneha/student-performances-predictor.git
+cd student-performances-predictor
+```
 
-# Make sure dataset is in same folder
-# Student_performance_data.csv
+If you already have the project folder, open a terminal in that folder instead.
+The folder should contain `app.py` and `Student_performance_data.csv`.
 
-# Run server
+### Step 2: Create a Python environment and install dependencies
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+**Windows PowerShell**
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If PowerShell prevents environment activation, you can invoke the environment's
+Python directly with `.\.venv\Scripts\python.exe` instead.
+
+### Step 3: Start the prediction API
+
+In the activated environment, from the project root, run:
+
+```bash
 python app.py
 ```
 
-Server will start at:
-👉 http://localhost:5001
+The API trains both models when it starts. Wait for the “Models ready” message;
+then leave this terminal running. The API listens at
+`http://127.0.0.1:5001`.
 
----
+### Step 4: Start the dashboard
 
-### 🔹 API Testing
-
-You can test using Browser or Postman:
-
-```
-GET  http://localhost:5001/
-GET  http://localhost:5001/model-info
-POST http://localhost:5001/predict
-```
-
----
-
-## 🔹 Step 2 — Frontend Setup (React)
-
-### Option A — Existing React Project
+Open a **second terminal** in the project root. If you use a virtual
+environment, activate it in this terminal too. Start a local static web server:
 
 ```bash
-# Copy component into src/
-import StudentPredictor from './StudentPredictor';
+python -m http.server 8000 --directory public
 ```
 
----
+On macOS/Linux, `python3` can be used instead of `python` if necessary. On
+Windows, use `py` if `python` is not available:
 
-### Option B — Create New React App
-
-```bash
-npx create-react-app student-app
-cd student-app
-cp ../StudentPredictor.jsx src/
+```powershell
+py -m http.server 8000 --directory public
 ```
 
-Update `App.js`:
+Keep both terminals running. The standalone dashboard automatically connects to
+the local API when opened on localhost.
 
-```javascript
-import StudentPredictor from "./StudentPredictor";
+### Step 5: Open and use GradeSense
 
-function App() {
-  return <StudentPredictor />;
-}
+1. Visit [http://localhost:8000](http://localhost:8000) in your browser.
+2. Check that the API status indicator says it is connected.
+3. Enter the student profile. Use the dropdowns, number field, sliders, and
+   Yes/No activity toggles.
+4. Click **Predict performance**.
+5. Review the predicted GPA and letter grade, along with the entered study
+   hours, absences, parental support, and displayed factor bars.
+6. Change any inputs and click **Predict performance** again to request a new
+   prediction.
+7. To stop the local servers, focus each server terminal and press **Ctrl+C**.
 
-export default App;
-```
+### Troubleshooting
 
-Run app:
+- **API offline:** confirm the Flask terminal is still running at port `5001`.
+- **Port already in use:** stop the other process using the port or start the
+  server on another port and update the dashboard's API URL accordingly.
+- **CSV file not found:** run `python app.py` from the project root and confirm
+  `Student_performance_data.csv` is present.
+- **Missing Python module:** activate `.venv` and rerun
+  `python -m pip install -r requirements.txt`.
+- **Python command not found:** use `python3` on macOS/Linux or `py` on Windows.
 
-```bash
-npm start
-```
+## API endpoints
 
----
+With the Flask API running:
 
-## 📡 API Example
+| Method | Endpoint                           | Purpose                                      |
+| ------ | ---------------------------------- | -------------------------------------------- |
+| `GET`  | `http://127.0.0.1:5001/`           | Check API availability                       |
+| `GET`  | `http://127.0.0.1:5001/model-info` | View model, feature, and dataset information |
+| `POST` | `http://127.0.0.1:5001/predict`    | Request GPA and grade predictions            |
 
-### 🔸 POST `/predict`
-
-#### Request:
+Example request body for `POST /predict`:
 
 ```json
 {
@@ -111,37 +166,59 @@ npm start
 }
 ```
 
-#### Response:
+The response contains `gpa`, `gradeClass`, `grade`, and `gradeLabel`. Prediction
+values depend on the request inputs and the model trained from the included
+dataset.
 
-```json
-{
-  "gpa": 3.12,
-  "gradeClass": 1.0,
-  "grade": "B",
-  "gradeLabel": "Above average"
+## React component
+
+`StudentPredictor.jsx` is an alternative dashboard component for an existing
+React application. Import and render it from the app entry point:
+
+```jsx
+import StudentPredictor from "./StudentPredictor";
+
+function App() {
+  return <StudentPredictor />;
 }
+
+export default App;
 ```
 
----
+The component's `API_URL` constant currently points to the hosted API. To use
+the local Flask API, set it to `http://127.0.0.1:5001` and run the Flask server
+as described above. The standalone page in `public/` automatically chooses the
+local API on localhost.
 
-## ☁️ Deploy the frontend to Vercel
+## Repository contents
 
-The Flask API stays on Render. Vercel serves only the static frontend from
-`public/`; it does not build or deploy the Python backend.
+| File                           | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `app.py`                       | Flask API, model training, and prediction endpoints |
+| `public/index.html`            | Standalone GradeSense dashboard                     |
+| `StudentPredictor.jsx`         | React version of the dashboard                      |
+| `Student_performance_data.csv` | Dataset used for local model training               |
+| `requirements.txt`             | Python package requirements                         |
+| `vercel.json`                  | Static dashboard deployment configuration           |
 
-1. Push this repository to GitHub and import it in Vercel.
-2. Select **Other** as the Framework Preset and leave the Build Command empty.
-3. Set the Output Directory to `public` and leave the Root Directory as `.`.
-4. Deploy. The page in `public/index.html` calls the existing Render API at
-   `https://student-performances-predictor.onrender.com`.
+The local API trains models from the CSV on each start; the saved `.joblib`
+files are not needed to run it.
 
-The Render service, its settings, and its API code do not need to change.
+## Deployment
 
----
+Vercel serves the static dashboard from `public/`; the Flask API remains a
+separate service. To deploy the frontend, import the repository into Vercel,
+select **Other** as the Framework Preset, set the Output Directory to `public`,
+and leave the Build Command empty. The deployed standalone page uses the
+configured hosted API.
 
-## 🚀 Features
+## Limitations and responsible use
 
-- Machine Learning Model (KNN)
-- Real-time Prediction API
-- React UI Integration
-- Scalable Deployment Ready
+- Models are trained from the provided dataset at API startup. Historical
+  patterns may not generalize to all students or educational settings.
+- Demographic information is included in model inputs and can affect outputs.
+  This project does not perform a fairness or bias audit.
+- Displayed factor bars are illustrative and should not be interpreted as
+  causal explanations.
+- Use the project to explore machine learning concepts, not to make decisions
+  about real students.
